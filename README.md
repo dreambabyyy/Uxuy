@@ -48,7 +48,7 @@ This is an automation script written in Node.js for the uxuy platform. It perfor
 3. **Create File:**
    ```bash
    nano data.txt
-   nano proxt.txt
+   nano proxy.txt
 
    
    FORMAT PROXY
