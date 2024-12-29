@@ -1,6 +1,14 @@
 # UXUY BOT AUTO 
 
-Uxuy Automation Check-in Tool & Auto Quest
+# LINK JOIN
+ https://t.me/UXUYbot/app?startapp=A_2128679063_inviteEarn
+
+Join My Family : https://t.me/superbianz
+
+
+# INFORMATION BOT
+
+Uxuy Automation Check-in Tool & Auto Quest , Sup Multi Account !
 
 This is an automation script written in Node.js for the uxuy platform. It performs the following tasks:
 
