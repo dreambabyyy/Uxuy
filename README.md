@@ -50,6 +50,11 @@ This is an automation script written in Node.js for the uxuy platform. It perfor
    nano data.txt
    nano proxt.txt
 
+   
+   FORMAT PROXY
+   https://user:pass@host:port
+
+
 4. **Prepare the data.txt file:**
    
 •  Save the user's X-Token-Debank to the data.txt file in the root directory, one per line.
