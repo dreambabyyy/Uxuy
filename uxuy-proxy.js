@@ -6,19 +6,19 @@ const { HttpsProxyAgent } = require("https-proxy-agent");
 const readline = require("readline");
 const user_agents = require("./config/userAgents");
 const settings = require("./config/config");
-const { sleep, loadData, getRandomNumber, saveToken, isTokenExpired, saveJson, decodeJWT } = require("./utils");
+const { sleep, loadData, getRandomNumber, saveToken, getRandomNineDigitNumber, isTokenExpired, saveJson, decodeJWT } = require("./utils");
 const { Worker, isMainThread, parentPort, workerData } = require("worker_threads");
 const { checkBaseUrl } = require("./checkAPI");
 
 class ClientAPI {
-  constructor(queryId, accountIndex, proxy, baseURL, tokens, rfTokens) {
+  constructor(queryId, accountIndex, proxy, baseURL) {
     this.headers = {
       Accept: "*/*",
       "Accept-Encoding": "gzip, deflate, br",
       "Accept-Language": "vi-VN,vi;q=0.9,fr-FR;q=0.8,fr;q=0.7,en-US;q=0.6,en;q=0.5",
       "Content-Type": "application/json",
-      Origin: "https://miniapp.meshchain.ai",
-      referer: "https://miniapp.meshchain.ai/",
+      Origin: "https://miniapp.uxuy.one",
+      referer: "https://miniapp.uxuy.one/",
       "Sec-Ch-Ua": '"Not/A)Brand";v="99", "Google Chrome";v="115", "Chromium";v="115"',
       "Sec-Ch-Ua-Mobile": "?0",
       "Sec-Ch-Ua-Platform": '"Windows"',
@@ -34,8 +34,6 @@ class ClientAPI {
     this.proxyIP = null;
     this.session_name = null;
     this.session_user_agents = this.#load_session_data();
-    this.tokens = tokens || {};
-    this.rfTokens = rfTokens || {};
   }
 
   #load_session_data() {
@@ -62,7 +60,7 @@ class ClientAPI {
       return this.session_user_agents[this.session_name];
     }
 
-    console.log(`[Account ${this.accountIndex + 1}] Create user agent...`.blue);
+    console.log(`[Accounts ${this.accountIndex + 1}] Tạo user agent...`.blue);
     const newUserAgent = this.#get_random_user_agent();
     this.session_user_agents[this.session_name] = newUserAgent;
     this.#save_session_data(this.session_user_agents);
@@ -111,7 +109,7 @@ class ClientAPI {
 
   async log(msg, type = "info") {
     const timestamp = new Date().toLocaleTimeString();
-    const accountPrefix = `[Account ${this.accountIndex + 1}]`;
+    const accountPrefix = `[Accounts ${this.accountIndex + 1}]`;
     const ipPrefix = this.proxyIP ? `[${this.proxyIP}]` : "[Unknown IP]";
     let logMessage = "";
 
@@ -168,9 +166,10 @@ class ClientAPI {
           timeout: 30000,
         });
         success = true;
-        return { success: true, data: response.data.result };
+        if (response.data.result) return { success: true, data: response.data.result };
+        else return { success: false, data: response.data, error: response.data.error };
       } catch (error) {
-        this.log(`Request failed: ${url} | ${error.message} | trying again...`, "warning");
+        this.log(`Failed request: ${url} | ${error.message} | retrying...`, "warning");
         success = false;
         await sleep(settings.DELAY_BETWEEN_REQUESTS);
         if (currRetries == retries) return { success: false, error: error.message };
@@ -234,7 +233,7 @@ class ClientAPI {
     return this.makeRequest(`${this.baseURL}`, "post", {
       method: "wallet_myPoint",
       params: [],
-      id: 896770937,
+      id: getRandomNineDigitNumber(),
       jsonrpc: "2.0",
     });
   }
@@ -261,7 +260,7 @@ class ClientAPI {
           ],
         },
       ],
-      id: 896770937,
+      id: getRandomNineDigitNumber(),
       jsonrpc: "2.0",
     });
   }
@@ -270,7 +269,7 @@ class ClientAPI {
     return this.makeRequest(`${this.baseURL}`, "post", {
       method: "wallet_getFarmInfo",
       params: [],
-      id: 78611763,
+      id: getRandomNineDigitNumber(),
       jsonrpc: "2.0",
     });
   }
@@ -279,7 +278,7 @@ class ClientAPI {
     return this.makeRequest(`${this.baseURL}`, "post", {
       method: "wallet_claimFarm",
       params: [groupid, id, ""],
-      id: 542792293,
+      id: getRandomNineDigitNumber(),
       jsonrpc: "2.0",
     });
   }
@@ -288,7 +287,7 @@ class ClientAPI {
     return this.makeRequest(`${this.baseURL}`, "post", {
       method: "wallet_startFarm",
       params: [groupid, id],
-      id: 377602545,
+      id: getRandomNineDigitNumber(),
       jsonrpc: "2.0",
     });
   }
@@ -297,25 +296,25 @@ class ClientAPI {
     return this.makeRequest(`${this.baseURL}`, "post", {
       method: "wallet_myPoint",
       params: [],
-      id: 565051978,
+      id: getRandomNineDigitNumber(),
       jsonrpc: "2.0",
     });
   }
 
   async getTasks() {
     return this.makeRequest(`${this.baseURL}`, "post", {
-      method: "wallet_adsList2",
+      method: "wallet_taskList",
       params: [false],
-      id: 649710614,
+      id: getRandomNineDigitNumber(),
       jsonrpc: "2.0",
     });
   }
 
-  async completeTask(id) {
+  async completeTask(id, groupId) {
     return this.makeRequest(`${this.baseURL}`, "post", {
-      method: "wallet_adsClick",
-      params: [id],
-      id: 297490398,
+      method: "wallet_taskClick",
+      params: groupId ? [id, groupId, ""] : [id, ""],
+      id: getRandomNineDigitNumber(),
       jsonrpc: "2.0",
     });
   }
@@ -324,16 +323,79 @@ class ClientAPI {
     return this.makeRequest(`${this.baseURL}`, "post", {
       method: "wallet_taskList",
       params: [false],
-      id: 179679312,
+      id: getRandomNineDigitNumber(),
       jsonrpc: "2.0",
     });
   }
 
-  async claimTask(id) {
+  async claimTask(id, groupId) {
+    return this.makeRequest(`${this.baseURL}`, "post", {
+      method: "wallet_taskClick",
+      params: groupId ? [id, groupId, ""] : [id, ""],
+      id: getRandomNineDigitNumber(),
+      jsonrpc: "2.0",
+    });
+  }
+
+  async getAds() {
+    return this.makeRequest(`${this.baseURL}`, "post", {
+      method: "wallet_adsList3",
+      params: [false],
+      id: getRandomNineDigitNumber(),
+      jsonrpc: "2.0",
+    });
+  }
+
+  async clickAds(id, groupId) {
+    return this.makeRequest(`${this.baseURL}`, "post", {
+      method: "wallet_adsClick",
+      params: groupId ? [groupId, id] : [id],
+      id: getRandomNineDigitNumber(),
+      jsonrpc: "2.0",
+    });
+  }
+
+  async adsState(id, groupId) {
+    return this.makeRequest(`${this.baseURL}`, "post", {
+      method: "wallet_adsState",
+      params: groupId ? [groupId, id] : [id],
+      id: getRandomNineDigitNumber(),
+      jsonrpc: "2.0",
+    });
+  }
+
+  async claimAd(id, groupId) {
     return this.makeRequest(`${this.baseURL}`, "post", {
       method: "wallet_adsClaim",
-      params: [id, ""],
-      id: 432482742,
+      params: [id, groupId],
+      id: getRandomNineDigitNumber(),
+      jsonrpc: "2.0",
+    });
+  }
+
+  async setTaskCompletionStatus(id, groupId) {
+    return this.makeRequest(`${this.baseURL}`, "post", {
+      method: "wallet_setTaskCompletionStatus",
+      params: [id, groupId],
+      id: getRandomNineDigitNumber(),
+      jsonrpc: "2.0",
+    });
+  }
+
+  async checkAdsState(id, groupId) {
+    return this.makeRequest(`${this.baseURL}`, "post", {
+      method: "wallet_taskState",
+      params: groupId ? [groupId, id] : [id],
+      id: getRandomNineDigitNumber(),
+      jsonrpc: "2.0",
+    });
+  }
+
+  async claimVideoAD(id, groupId) {
+    return this.makeRequest(`${this.baseURL}`, "post", {
+      method: "wallet_claimVideoAD",
+      params: [groupId, id],
+      id: getRandomNineDigitNumber(),
       jsonrpc: "2.0",
     });
   }
@@ -366,42 +428,97 @@ class ClientAPI {
     return null;
   }
 
-  async handleTasks() {
-    const resTasks = await this.getTasks();
+  async handleTasks(retries = 1) {
+    let currRetries = retries;
+    const resTasks = await this.getAds();
     if (resTasks.success) {
       let tasks = resTasks.data?.items || [];
-      tasks.filter((t) => !t.finished && !settings.SKIP_TASKS.includes(t.id));
+      tasks = tasks.filter((t) => !t.rewarded && !settings.SKIP_TASKS.includes(t.id));
       if (tasks.length == 0) {
-        this.log("No tasks to do", "warning");
+        this.log("No task to do", "warning");
       } else {
         for (const task of tasks) {
           await sleep(2);
           if (!task.clicked) {
-            this.log(`Completing task ${task.id} | ${task.name} ...`);
-            await this.completeTask(task.id);
+            this.log(`Trying completing task ${task.id} | ${task.name} ...`);
+            await this.clickAds(task.id, task.groupId);
+            await this.adsState(task.id, task.groupId);
             await sleep(2);
           }
-          const resClaim = await this.claimTask(task.id);
-          if (resClaim.success) {
-            if (!resClaim.data?.clicked) {
-              this.log(`Verify task ${task.id} | ${task.name} sucessfully!`, "success");
+
+          if (task.finished) {
+            const resClaim = await this.claimAd(task.id, task.groupId);
+            if (resClaim.success) {
+              if (!resClaim.data?.clicked && retries > 0) {
+                this.log(`Trying verify task ${task.id} | ${task.name}...`);
+              } else {
+                this.log(`Claim task ${task.id} | ${task.name} sucessfully! | Reward: ${task.awardAmount || task.awards[0].amount}`, "success");
+
+                this.log(`Trying claim video ads for task ${task.id} | ${task.name} | Waiting 30s...`);
+                await sleep(30);
+                const resClaimVideo = await this.claimVideoAD(task.id, task.groupId);
+                if (resClaimVideo.success) {
+                  this.log(`Claim video ads for task ${task.id} | ${task.name} sucessfully! | Reward: ${resClaimVideo.data[0]?.amount || JSON.stringify(resClaimVideo.data)}`, "success");
+                } else {
+                  this.log(`Claim video ads for task ${task.id} | ${task.name} failed: ${resClaimVideo.error.message}`, "warning");
+                }
+              }
             } else {
-              this.log(`Claim task ${task.id} | ${task.name} sucessfully! | Reward: ${task.awardAmount}`, "success");
+              this.log(`Claim task ${task.id} | ${task.name} failed: ${resClaim.error.message} | Task maybe need completed manually!`, "warning");
             }
-          } else {
-            this.log(`Claim task ${task.id} | ${task.name} failed!`, "warning");
           }
         }
       }
     }
+    if (currRetries > 0) {
+      currRetries--;
+      return await this.handleTasks(currRetries);
+    }
   }
+
+  // async handleTasksOnclain(retries = 1) {
+  //   const resTasks = await this.getTasks();
+  //   if (resTasks.success) {
+  //     let tasks = resTasks.data?.items || [];
+  //     tasks.filter((t) => !t.finished && !settings.SKIP_TASKS.includes(t.id));
+  //     if (tasks.length == 0) {
+  //       this.log("No tasks to do", "warning");
+  //     } else {
+  //       for (const task of tasks) {
+  //         await sleep(2);
+  //         if (!task.clicked) {
+  //           this.log(`Completing task ${task.id} | ${task.name} ...`);
+  //           await this.completeTask(task.id);
+  //           await this.clickAds(task.id);
+  //           await sleep(2);
+  //         }
+  //         const resClaim = await this.claimTask(task.id);
+  //         const resClaimAds = await this.claimAd(task.id);
+
+  //         if (resClaim.success) {
+  //           if (!resClaim.data?.clicked || !resClaimAds.data?.clicked) {
+  //             this.log(`Verify task ${task.id} | ${task.name} sucessfully!`, "success");
+  //           } else {
+  //             this.log(`Claim task ${task.id} | ${task.name} sucessfully! | Reward: ${task.awardAmount}`, "success");
+  //           }
+  //         } else {
+  //           this.log(`Claim task ${task.id} | ${task.name} failed!`, "warning");
+  //         }
+  //       }
+  //     }
+  //   }
+  //   if (retries > 0) {
+  //     retries--;
+  //     return await this.handleTasksOnclain(retries);
+  //   }
+  // }
 
   async handleFarming() {
     const farmInfo = await this.getFarmInfo();
     if (farmInfo.success) {
       const { coolDown, sysTime, farmTime, finished, id, groupId, rewarded, awardAmount } = farmInfo.data;
-      const finishTime = farmTime + coolDown;
-      const currentTime = sysTime;
+      const finishTime = (farmTime || 0) + (coolDown || 0);
+      const currentTime = sysTime || 0;
 
       if (currentTime < finishTime) {
         const remainingTime = finishTime - currentTime;
@@ -457,19 +574,19 @@ class ClientAPI {
 
     const token = await this.getValidToken();
     if (!token) {
-      this.log("Token not found or token expired...skiping", "error");
+      this.log("Token not found or token expired...skipping", "error");
       return;
     }
     const data = await this.getWalletRegister();
     const farmInfo = await this.getFarmInfo();
 
-    if (data.success && data?.data?.alias && farmInfo?.data?.token) {
-      const { decimals, balance } = farmInfo?.data?.token;
-      const formattedBalance = (parseInt(balance) / Math.pow(10, decimals)).toFixed(decimals);
-      this.log(`Username: ${data?.data?.alias[0]} | Balances: ${formattedBalance} UP`);
+    if (!data?.data?.alias || !farmInfo?.data?.token) {
+      return this.log("Unable to get user information...skip", "warning");
     }
-
-    await this.handleTasks();
+    const { decimals, balance } = farmInfo?.data?.token;
+    const formattedBalance = (parseInt(balance) / Math.pow(10, decimals)).toFixed(decimals);
+    this.log(`Username: ${data?.data?.alias[0]} | Balances: ${formattedBalance} UP`);
+    await this.handleTasks(1);
     await this.handleFarming();
   }
 }
@@ -511,7 +628,8 @@ async function main() {
     console.log(`Proxy: ${proxies.length}`);
     process.exit(1);
   }
-  console.log("Tool developed by Tele Airdrop Super BianzZz team (https://t.me/superbianz)".yellow);
+  console.log(colors.yellow("Tool developed by Tele Airdrop Super BianzZz team (https://t.me/superbianz)".yellow));
+
   let maxThreads = settings.MAX_THEADS;
 
   const { endpoint: hasIDAPI, message } = await checkBaseUrl();
@@ -548,7 +666,7 @@ async function main() {
               resolve();
             });
             worker.on("error", (error) => {
-              console.log(`Worker error for account ${currentIndex}: ${error.message}`);
+              console.log(`Worker for account ${currentIndex}: ${error.message}`);
               worker.terminate();
               resolve();
             });
@@ -576,8 +694,7 @@ async function main() {
       }
     }
     await sleep(3);
-    console.log("Tool developed by Tele Airdrop Super BianzZz team (https://t.me/superbianz)".yellow);
-    console.log(`=============Complete all accounts | Wait ${settings.TIME_SLEEP} minutes=============`.magenta);
+    console.log(`=============Complete all accounts | Wait ${settings.TIME_SLEEP} Minute=============`.magenta);
     await sleep(settings.TIME_SLEEP * 60);
   }
 }
