@@ -40,28 +40,28 @@ function splitIdPet(num) {
 // Function to override environment variables
 const envFilePath = path.join(__dirname, ".env");
 function updateEnv(variable, value) {
-  // read file .env
+  // Đọc file .env
   fs.readFile(envFilePath, "utf8", (err, data) => {
     if (err) {
-      console.log("Cannot read file .env:", err);
+      console.log("Unable to read file .env:", err);
       return;
     }
-    console.log(value, variable);
-    // Create or update variables in file
+
+    // Create or update variables in a file
     const regex = new RegExp(`^${variable}=.*`, "m");
-    const newData = data.replace(regex, `${variable}=${value}`);
+    let newData = data.replace(regex, `${variable}=${value}`); // Use let instead of const
 
     // Check if variable does not exist in file, add at the end
     if (!regex.test(data)) {
       newData += `\n${variable}=${value}`;
     }
 
-    // Record file .env
+    // Ghi lại file .env
     fs.writeFile(envFilePath, newData, "utf8", (err) => {
       if (err) {
-        console.error("Cannot write file .env:", err);
+        console.error("Không thể ghi file .env:", err);
       } else {
-        console.log(`Updated ${variable} wall ${value}`);
+        // console.log(`Memperbarui ${variabel} menjadi ${value}`);
       }
     });
   });
@@ -123,10 +123,10 @@ function isTokenExpired(token) {
 
 function generateRandomHash() {
   const characters = "0123456789abcdef";
-  let hash = "0x"; // Start with "0x"
+  let hash = "0x"; // Dimulai dengan "0x"
 
   for (let i = 0; i < 64; i++) {
-    // 64 character for hash
+    // 64 karakter untuk hash
     const randomIndex = Math.floor(Math.random() * characters.length);
     hash += characters[randomIndex];
   }
@@ -147,12 +147,12 @@ function loadData(file) {
   try {
     const datas = fs.readFileSync(file, "utf8").replace(/\r/g, "").split("\n").filter(Boolean);
     if (datas?.length <= 0) {
-      console.log(colors.red(`No data found ${file}`));
+      console.log(colors.red(`Tidak ada data yang ditemukan ${file}`));
       return [];
     }
     return datas;
   } catch (error) {
-    console.log(`Not found file ${file}`.red);
+    console.log(`Không tìm thấy file ${file}`.red);
     return [];
   }
 }
@@ -209,6 +209,12 @@ function generateComplexId(length = 9) {
   return result;
 }
 
+function getRandomNineDigitNumber() {
+  const min = 100000000; // Angka 9 digit terkecil
+  const max = 999999999; // Angka 9 digit terbesar
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
 function decodeJWT(token) {
   const [header, payload, signature] = token.split(".");
 
@@ -247,4 +253,5 @@ module.exports = {
   getOrCreateJSON,
   sleep,
   parseQueryString,
+  getRandomNineDigitNumber,
 };
